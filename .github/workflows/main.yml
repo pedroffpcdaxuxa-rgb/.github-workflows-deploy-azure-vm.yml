@@ -1,0 +1,35 @@
+name: Criar e Configurar PC Virtual Windows
+
+on:
+  workflow_dispatch: # Permite que você clique em um botão para ligar a VM manualmente
+
+jobs:
+  executar-na-vm:
+    runs-on: windows-latest # Aloca uma máquina virtual Windows limpa na nuvem do GitHub
+
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Verificar versão do Windows e Hardware da VM
+        shell: pwsh
+        run: |
+          Write-Host "=== INFORMAÇÕES DO SISTEMA ===" -ForegroundColor Cyan
+          Get-ComputerInfo | Select-Object OsName, OsVersion, WindowsBuildLabEx
+          
+          Write-Host "=== PROCESSADOR E MEMÓRIA RAM ===" -ForegroundColor Cyan
+          Get-CimInstance Win32_Processor | Select-Object Name, NumberOfCores
+          (Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1GB | ForEach-Object { Write-Host "Memória RAM Total: $_ GB" }
+
+      - name: Instalar ferramentas úteis (Exemplo: Chocolatey, 7-Zip, VS Code)
+        shell: pwsh
+        run: |
+          Write-Host "Instalando gerenciador de pacotes Chocolatey..."
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+          
+          Write-Host "Instalando 7-Zip e VS Code via linha de comando..."
+          choco install 7zip vscode -y
+          
+          Write-Host "Configuração concluída com sucesso na VM do GitHub!"
